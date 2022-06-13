@@ -100,7 +100,7 @@ def deletepasswords():
         print("\nPasswords deleted.")
 
 ''' 
-def write_key():
+def create_key():
     key = Fernet.generate_key()
     with open("key.key", "wb") as key_file:
         key_file.write(key)'''
