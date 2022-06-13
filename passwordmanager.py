@@ -1,5 +1,6 @@
-import time
 import os
+from cryptography.fernet import Fernet
+
 
 def action():
     try:
@@ -31,13 +32,16 @@ def action():
             print("Error occured during action selection. Please enter a valid action")
 
 def add():
+    key = load_key() + getmasterpassword().encode()
+    fer = Fernet(key)
     with open("testpasswords.txt", "a+") as testpasswords:
         site = input("Please enter the site the password is for: ").title()
         psw = input("Please select a password for this site: ")
-        date = time.strftime("%A, %d.%m.%Y %H:%M:%S", time.localtime())
-        testpasswords.write(f"\n{site}: {psw} \nPassword was saved on {date}")
+        testpasswords.write(site + "|" + fer.encrypt(psw.encode()).decode() + "\n")
 
 def view():
+    key = load_key() + getmasterpassword().encode()
+    fer = Fernet(key)
     try:
         with open("testpasswords.txt", "x") as testpasswordsfile:
             testpasswordsfile.write("")
@@ -47,7 +51,10 @@ def view():
         if(os.stat("testpasswords.txt").st_size == 0):
             print("\nYou haven't saved any passwords yet.")
         else:
-            print(testpasswords.read())
+            for line in testpasswords.readlines():
+                content = line.rstrip()
+                site, passw = content.split("|")
+                print("Site: " + site + " | Password: " + fer.decrypt(passw.encode()).decode())
 
 def setmasterpassword():
     with open("masterpassword.txt", "a+") as masterpasswordfile:
@@ -74,6 +81,11 @@ def askmasterpassword():
         print("You entered a wrong password too many times. The program will now close.")
         quit()
 
+def getmasterpassword():
+    with open("masterpassword.txt", "r") as masterkey:
+        masterpassword = masterkey.read()
+    return masterpassword
+
 def resetmasterpassword():
     with open("masterpassword.txt", "r+") as mp:
         mp.truncate(0)
@@ -86,8 +98,18 @@ def deletepasswords():
         tp.truncate(0)
         tp.close()
         print("\nPasswords deleted.")
-        
 
+''' 
+def write_key():
+    key = Fernet.generate_key()
+    with open("key.key", "wb") as key_file:
+        key_file.write(key)'''
+
+def load_key():
+    file = open("key.key", "rb")
+    key = file.read()
+    file.close()
+    return key
 
 if __name__ == "__main__":
     action()
